@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - apps/*/*
+  - packages/*
+  - packages/ai/*
+  - packages/ai/*/*
+  - configs/*

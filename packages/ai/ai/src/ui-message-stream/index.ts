@@ -1,0 +1,1 @@
+export type { InferUIMessageChunk, UIMessageChunk } from './ui-message-chunks';

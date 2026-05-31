@@ -1,0 +1,22 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@view/*": ["./src/view/*"],
+      "@/*": ["./src/*"],
+      "@coco-box/ai": ["../../../packages/ai/ai/src"],
+      "@coco-box/ai-ag-ui-adapter": ["../../../packages/ai/adapters/ag-ui/src"],
+      "@coco-box/ai-vue": ["../../../packages/ai/vue/src"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue","auto-imports.d.ts"]
+}

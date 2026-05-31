@@ -1,0 +1,177 @@
+.one-markdown-render {
+  ::v-deep {
+    // 通配符
+    > *:first-child {
+      margin-top: 0;
+    }
+    > *:last-child {
+      margin-bottom: 0;
+    }
+
+    // 标题/段落/文本
+    .h1,
+    .h2,
+    .h3,
+    .h4,
+    .h5,
+    .h6,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      // line-height: 1.1;
+      margin: 16px 0 12px 0;
+      
+      // 第一个子元素或直接子元素为第一个时，移除上边距
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    > h1:first-child,
+    > h2:first-child,
+    > h3:first-child,
+    > h4:first-child,
+    > h5:first-child,
+    > h6:first-child {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 40px 0 12px 0;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 40px 0 12px 0;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 28px 0 12px 0;
+    }
+
+    h4,
+    h5,
+    h6 {
+      font-size: 16px;
+      margin: 24px 0 8px 0;
+    }
+
+    caption {
+      border: 1px dashed var(--one-line);
+      border-bottom: 0;
+      padding: 3px;
+      text-align: center;
+    }
+
+    p {
+      overflow-wrap: break-word;
+      margin: 8px 0;
+      padding: 0;
+      // &:last-child {
+      //   margin-bottom: 0;
+      // }
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    // 列表
+    ul,
+    ol {
+      margin: 0;
+      padding: 0;
+      padding-inline-start: 1.75em;
+      > li {
+        // line-height: 21px;
+      }
+    }
+    ul {
+      list-style-type: disc;
+      i::marker {
+        font-size: 20px;
+      }
+    }
+    ol {
+      list-style-type: decimal;
+    }
+    li {
+      list-style: revert;
+    }
+
+    // 表格
+    table {
+      margin-bottom: 10px;
+      border-collapse: collapse;
+      display: table;
+      width: 100%;
+      margin: 1em 0;
+    }
+
+    td, th {
+      padding: 5px 10px;
+      border: 1px solid var(--one-dividing-line);
+      background-color: var(--one-base-bg);
+    }
+    th {
+      border-top: 1px solid var(--one-dividing-line);
+      background-color: var(--one-global-bg);
+    }
+    td p {
+      margin: 0;
+      padding: 0;
+    }
+
+    // 其他
+    blockquote {
+      padding: 0 8px;
+      margin: 0;
+      color: var(--one-text-weak);
+      border-left: 5px solid var(--one-dividing-line);
+    }
+    
+    a {
+      color: var(--one-link);
+      text-decoration: underline;
+      cursor: pointer;
+
+      &:hover {
+        color: var(--one-link-active);
+      }
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    hr {
+      border-top: 1px solid var(--one-line);
+      margin: 24px 0;
+    }
+
+    strong {
+      font-weight: 900;
+    }
+
+    .one-code-block {
+      margin: 8px 0;
+    }
+
+    code {
+      background-color: var(--one-gray-form-control-bg);
+      border: 1px solid var(--one-border-primary);
+      padding: 1px 2px;
+    }
+
+    pre code {
+      border: none;
+    }
+  }
+}

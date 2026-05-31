@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@coco-box/ai-backend",
+    "@coco-box/chat-vue2",
+    "@coco-box/chat-vue3",
+    "@coco-box/ai-eslint-config",
+    "@coco-box/ai-tailwindcss-config",
+    "@coco-box/ai-tsconfig"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "jsx": "preserve",
+    "baseUrl": ".", // 配合 paths 使用
+    "paths": {
+      "@/*": ["src/*"],
+      "@coco-box/ai-ui": ["../../../packages/ui/src"],
+      "@coco-box/ai": ["../../../packages/ai/ai/src"],
+      "@coco-box/ai-ag-ui-adapter": ["../../../packages/ai/adapters/ag-ui/src"],
+      "@coco-box/ai-vue-2": ["../../../packages/ai/vue-2/src"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["node_modules"]
+} 

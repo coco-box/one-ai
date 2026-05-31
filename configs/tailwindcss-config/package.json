@@ -1,0 +1,15 @@
+{
+  "name": "@coco-box/ai-tailwindcss-config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tailwind.config": "./tailwind.config.js",
+    "./theme.css": "./theme.css"
+  },
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

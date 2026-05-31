@@ -1,0 +1,84 @@
+import type { PropType, ExtractPropTypes, Ref } from '@vue/composition-api';
+
+// eslint-disable-next-line no-shadow
+export enum DisplayType {
+  Simple = 'simple',
+  Full = 'full',
+}
+// eslint-disable-next-line no-shadow
+export enum InputVariant {
+  Bordered = 'bordered',
+  BorderLess = 'borderless',
+}
+// eslint-disable-next-line no-shadow
+export enum SendBtnVariant {
+  Simple = 'simple',
+  Full = 'full',
+}
+// eslint-disable-next-line no-shadow
+export enum SubmitShortKey {
+  Enter = 'enter',
+  ShiftEnter = 'shiftEnter',
+}
+
+export const inputProps = {
+  value: {
+    type: String,
+    default: '',
+  },
+  placeholder: {
+    type: String,
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  displayType: {
+    type: String as PropType<DisplayType>,
+    default: DisplayType.Full,
+  },
+  variant: {
+    type: String as PropType<InputVariant>,
+    default: InputVariant.Bordered,
+  },
+  sendBtnVariant: {
+    type: String as PropType<SendBtnVariant>,
+    default: SendBtnVariant.Full,
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+  showCount: {
+    type: Boolean,
+    default: false,
+  },
+  maxLength: {
+    type: Number,
+  },
+  submitShortKey: {
+    type: [String, null] as PropType<SubmitShortKey | null>,
+    default: SubmitShortKey.Enter,
+  },
+  autosize: {
+    type: [Boolean, Object] as PropType<boolean | { minRows?: number; maxRows?: number }>,
+    default: false,
+  },
+  resize: {
+    type: String as PropType<'none' | 'both' | 'horizontal' | 'vertical'>,
+    default: 'none',
+  },
+  rows: {
+    type: Number,
+  },
+};
+export type InputProps = ExtractPropTypes<typeof inputProps>;
+
+export interface InputContext {
+  inputValue: Ref<string>;
+  rootProps: InputProps;
+  rootEmits: (event: string, ...args: any[]) => void;
+}
+
+export const inputEmits = ['change', 'submit', 'cancel', 'focus', 'blur'];
+export const inputInjectionKey = 'one-input';

@@ -1,0 +1,42 @@
+{
+  "name": "@coco-box/ai-ag-ui-adapter",
+  "version": "0.0.1",
+  "description": "Ag-UI 适配器：将 Ag-UI 事件与 @coco-box/ai UI 消息流对接",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .js,.cjs,.mjs,.ts,.tsx --fix --ignore-path .gitignore",
+    "test": "vitest",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@coco-box/ai": "workspace:*",
+    "@ag-ui/client": "^0.0.35",
+    "@ag-ui/core": "^0.0.35"
+  },
+  "peerDependencies": {
+    "@coco-box/ai": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.7.3",
+    "vite": "^5.0.12",
+    "vite-plugin-dts": "^4.0.0",
+    "vitest": "^1.2.2"
+  }
+}

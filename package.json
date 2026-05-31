@@ -1,0 +1,56 @@
+{
+  "name": "one-ai",
+  "version": "0.0.1",
+  "description": "coco-box 旗下 AI 相关的工具库和组件库",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/*/*",
+    "configs/*",
+    "packages/*",
+    "packages/ai/*",
+    "packages/ai/*/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "type-check": "turbo run type-check",
+    "build:ai": "turbo run build --filter=@coco-box/ai",
+    "build:ag-ui": "turbo run build --filter=@coco-box/ai-ag-ui-adapter",
+    "release:ag-ui": "pnpm --filter=@coco-box/ai-ag-ui-adapter publish --access public --no-git-checks",
+    "build:vue": "turbo run build --filter=@coco-box/ai-vue",
+    "build:vue-2": "turbo run build --filter=@coco-box/ai-vue-2",
+    "build:react": "turbo run build --filter=@coco-box/ai-react",
+    "build:ui": "turbo run build --filter=@coco-box/ai-ui",
+    "release:ui": "pnpm --filter=@coco-box/ai-ui publish --access public --no-git-checks",
+    "build:ui-docs": "pnpm build:ui && cd docs && pnpm install && pnpm run build",
+    "version-packages": "changeset version",
+    "build:ai-all": "pnpm run build:ai && pnpm run build:ag-ui && pnpm run build:vue && pnpm run build:vue-2 && pnpm run build:react && pnpm run build:ui",
+    "release:ai-all": "pnpm -r --filter=@coco-box/ai --filter=@coco-box/ai-ag-ui-adapter --filter=@coco-box/ai-vue --filter=@coco-box/ai-vue-2 --filter=@coco-box/ai-react --filter=@coco-box/ai-ui publish --access public --no-git-checks && pnpm changeset tag && git push --follow-tags"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.4",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "jsdom": "^23.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.5.5",
+    "typescript": "^5.7.3",
+    "vite-plugin-dts": "^4.0.0",
+    "vitepress": "2.0.0-alpha.15",
+    "vitest": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=20.19.3",
+    "pnpm": ">=10.15.0"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
+  },
+  "packageManager": "pnpm@10.15.0",
+  "volta": {
+    "node": "20.19.3"
+  }
+}
