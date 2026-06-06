@@ -1,4 +1,4 @@
-export { default as MarkdownDiffRenderer } from './components/MarkdownDiffRenderer.vue';
-export { useMarkdownDiff } from './composables/useMarkdownDiff';
-export { createMarkdownDiffAst, renderMarkdownDiff, renderDiffAstToHtml, getMarkdownDiffStyles, markdownToAst } from './lib';
+/// <reference path="./lib/core/types/unist.d.ts" />
+
+export { createMarkdownDiffAst, renderMarkdownDiff, renderDiffAstToHtml, MARKDOWN_DIFF_BODY_CLASS_NAME, markdownToAst } from './lib';
 export type { MarkdownDiffRenderOptions, MarkdownDiffResult } from './lib';

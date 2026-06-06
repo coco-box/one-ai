@@ -1,7 +1,7 @@
 {
   "name": "@coco-box/md-diff",
-  "version": "0.0.1",
-  "description": "Markdown AST diff 与渲染组件",
+  "version": "0.0.0",
+  "description": "无关框架的 Markdown AST diff 与 HTML 渲染工具",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -10,15 +10,19 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./styles.css": "./dist/styles.css"
   },
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
   "files": [
     "dist"
   ],
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json",
-    "type-check": "vue-tsc --noEmit"
+    "build": "tsc --noEmit && vite build && tsc -p tsconfig.build.json && cp src/styles.css dist/styles.css",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@datastructures-js/priority-queue": "^6.3.3",
@@ -31,16 +35,11 @@
     "unist-builder": "^4.0.0",
     "unist-util-visit": "^5.0.0"
   },
-  "peerDependencies": {
-    "vue": "^3.4.15"
-  },
   "devDependencies": {
     "@types/mdast": "^4.0.4",
     "@types/node": "^24.0.1",
     "@types/unist": "^3.0.3",
-    "@vitejs/plugin-vue": "^5.2.4",
     "typescript": "^5.8.3",
-    "vite": "^5.0.12",
-    "vue-tsc": "^2.2.12"
+    "vite": "^5.0.12"
   }
 }

@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@coco-box/md-diff": ["../../../packages/md-diff/src/index.ts"]
+      "@coco-box/md-diff": ["../../../packages/md-diff/src/index.ts"],
+      "@coco-box/md-diff/styles.css": ["../../../packages/md-diff/src/styles.css"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.d.ts"]

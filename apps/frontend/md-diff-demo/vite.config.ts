@@ -5,10 +5,20 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [vue()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@coco-box/md-diff': path.resolve(__dirname, '../../../packages/md-diff/src/index.ts'),
-    },
+    alias: [
+      {
+        find: '@',
+        replacement: path.resolve(__dirname, './src'),
+      },
+      {
+        find: '@coco-box/md-diff/styles.css',
+        replacement: path.resolve(__dirname, '../../../packages/md-diff/src/styles.css'),
+      },
+      {
+        find: '@coco-box/md-diff',
+        replacement: path.resolve(__dirname, '../../../packages/md-diff/src/index.ts'),
+      },
+    ],
   },
   optimizeDeps: {
     exclude: ['@coco-box/md-diff'],
