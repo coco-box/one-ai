@@ -1,6 +1,6 @@
 {
   "name": "@coco-box/md-diff",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "无关框架的 Markdown AST diff 与 HTML 渲染工具",
   "type": "module",
   "main": "./dist/index.js",
