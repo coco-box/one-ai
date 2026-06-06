@@ -1,0 +1,236 @@
+:root {
+  color: #14213d;
+  background:
+    radial-gradient(circle at top, rgba(249, 196, 74, 0.18), transparent 36%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.page-shell {
+  width: min(1480px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.hero-copy,
+.hero-meta,
+.editor-card,
+.result-card {
+  border: 1px solid rgba(20, 33, 61, 0.1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px rgba(20, 33, 61, 0.08);
+}
+
+.hero-copy {
+  padding: 28px;
+}
+
+.hero-kicker,
+.card-label {
+  margin: 0 0 10px;
+  color: #7c889f;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero-copy h1,
+.card-head h2 {
+  margin: 0;
+  color: #14213d;
+}
+
+.hero-copy h1 {
+  font-size: clamp(32px, 4vw, 54px);
+  line-height: 1;
+}
+
+.hero-copy p:last-child {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  color: #425066;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.hero-meta {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+}
+
+.hero-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: #14213d;
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.hero-meta code,
+.upload-button code {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  font-family: "SFMono-Regular", "Menlo", "Monaco", monospace;
+  font-size: 12px;
+}
+
+.content-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.editors-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.editor-card,
+.result-card {
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(20, 33, 61, 0.08);
+}
+
+.card-head h2 {
+  font-size: 22px;
+}
+
+.upload-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #14213d;
+  color: #f8fafc;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.upload-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(20, 33, 61, 0.18);
+}
+
+.upload-button--accent {
+  background: #b44d12;
+}
+
+.upload-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 360px;
+  padding: 20px 24px 24px;
+  border: 0;
+  background: transparent;
+  color: #1b263b;
+  line-height: 1.75;
+  resize: vertical;
+}
+
+.editor-textarea:focus {
+  outline: none;
+}
+
+.result-card .viewer-panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.result-card .panel-header {
+  display: none;
+}
+
+.result-card .viewer-surface {
+  min-height: 420px;
+  padding: 24px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+@media (max-width: 1080px) {
+  .page-shell {
+    width: min(100vw - 24px, 1480px);
+    padding-top: 20px;
+  }
+
+  .hero,
+  .editors-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-copy,
+  .hero-meta,
+  .card-head,
+  .editor-textarea,
+  .result-card .viewer-surface {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}

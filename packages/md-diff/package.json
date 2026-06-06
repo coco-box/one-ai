@@ -1,0 +1,46 @@
+{
+  "name": "@coco-box/md-diff",
+  "version": "0.0.1",
+  "description": "Markdown AST diff 与渲染组件",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@datastructures-js/priority-queue": "^6.3.3",
+    "diff": "^8.0.2",
+    "marked": "^15.0.12",
+    "mdast": "^3.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-builder": "^4.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.15"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^24.0.1",
+    "@types/unist": "^3.0.3",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "^5.8.3",
+    "vite": "^5.0.12",
+    "vue-tsc": "^2.2.12"
+  }
+}
