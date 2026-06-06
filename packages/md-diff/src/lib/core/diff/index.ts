@@ -12,12 +12,14 @@ import { nodeOptimiseBottomUp, nodeOptimiseTopDown } from './optimise';
 import { prepareHeading } from './prepares/heading';
 import { prepareListItem } from './prepares/listItem';
 import { prepareMeta } from './prepares/meta';
+import { prepareParagraph } from './prepares/paragraph';
 import { createNodePriorityQueue } from './queue';
 import { assignSigns } from './sign';
 
 function diff(nOld: Root, nNew: Root): Root {
   const cleanups = [
     prepareHeading(nOld, nNew),
+    prepareParagraph(nOld, nNew),
     prepareListItem(nOld, nNew),
     prepareMeta(nOld, nNew),
   ];
