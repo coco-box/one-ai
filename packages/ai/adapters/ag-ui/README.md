@@ -105,3 +105,15 @@ const chatWs = new Chat({
 - 自定义数据：`CUSTOM(name,value)` → `data-<name>`（小写，放入 `data` 字段）
 - 运行状态：`RUN_STARTED` → `start`，`RUN_FINISHED` → `finish`，`RUN_ERROR` → `error`
 - 快照/状态：`MESSAGES_SNAPSHOT` → `data-messages-snapshot`，`STATE_SNAPSHOT` → `data-state-snapshot`，`STATE_DELTA` → `data-state-delta`
+
+## 异常事件流处理约定
+
+AG-UI 事件流应满足协议定义的事件顺序；公司内部可以基于 AG-UI 扩展自定义事件，适配器不通过硬编码事件类型列表来穷举所有合法事件。
+
+当后端推送的数据导致 JSON 解析、事件映射、`onUpdate` 回调或 `ReadableStream` 写入失败时，适配器将按流错误处理：
+
+- 立即让当前 `ReadableStream<UIMessageChunk>` 进入 `error` 状态，使上层 `Chat` 的 `onError` 能收到明确错误。
+- 取消上游 reader，停止继续读取 SSE/WS 原始流，避免后端持续推送时前端仍持续解析和写入已关闭的流。
+- 不对同一条异常流进行高频逐行 `console.error`，避免大量日志和堆栈输出阻塞浏览器主线程。
+
+该兜底逻辑只保证前端不会因异常事件流进入日志风暴或半关闭状态；正确的协议顺序仍应由后端和下游 UI 消息状态机共同保证。
