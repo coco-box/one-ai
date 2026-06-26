@@ -1,5 +1,11 @@
 # @coco-box/ai-ag-ui-adapter
 
+## 0.0.3
+
+### Patch Changes
+
+- fix: 抛出具体解析错误
+
 ## 0.0.2
 
 ### Patch Changes

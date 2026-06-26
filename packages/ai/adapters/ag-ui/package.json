@@ -1,6 +1,6 @@
 {
   "name": "@coco-box/ai-ag-ui-adapter",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Ag-UI 适配器：将 Ag-UI 事件与 @coco-box/ai UI 消息流对接",
   "type": "module",
   "main": "dist/index.js",

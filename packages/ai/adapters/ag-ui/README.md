@@ -112,6 +112,7 @@ AG-UI 事件流应满足协议定义的事件顺序；公司内部可以基于 A
 
 当后端推送的数据导致 JSON 解析、事件映射、`onUpdate` 回调或 `ReadableStream` 写入失败时，适配器将按流错误处理：
 
+- SSE 注释/心跳行（例如 `: heartbeat`）以及 `event:`、`id:`、`retry:` 等非 `data` 控制字段不视为业务事件，解析器会静默跳过。
 - 立即让当前 `ReadableStream<UIMessageChunk>` 进入 `error` 状态，使上层 `Chat` 的 `onError` 能收到明确错误。
 - 取消上游 reader；HTTP/SSE 传输还会 abort 底层 fetch 请求，避免后端持续推送时浏览器仍继续接收数据。
 - 不对同一条异常流进行高频逐行 `console.error`，避免大量日志和堆栈输出阻塞浏览器主线程。
