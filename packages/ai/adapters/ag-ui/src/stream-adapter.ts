@@ -8,10 +8,12 @@ import type { UIMessageChunk } from '@coco-box/ai';
  * 
  * @param agUIStream AG-UI 原始事件流
  * @param onUpdate 可选的 chunk 更新回调函数
+ * @param onStreamError 可选的流错误回调函数
  */
 export function createUiChunkStreamFromAgUi(
   agUIStream: ReadableStream<string | Uint8Array | AgUIRawEvent>,
   onUpdate?: (chunk: UIMessageChunk) => void,
+  onStreamError?: (error: unknown) => void,
 ): ReadableStream<UIMessageChunk> {
   const textDecoder = new TextDecoder();
   let reader: ReadableStreamDefaultReader<string | Uint8Array | AgUIRawEvent> | undefined;
@@ -52,6 +54,11 @@ export function createUiChunkStreamFromAgUi(
       const failStream = (error: unknown) => {
         if (isClosed) return;
         isClosed = true;
+        try {
+          onStreamError?.(error);
+        } catch (e) {
+          // 错误回调不应阻断原始错误继续传递给下游
+        }
         cancelUpstream(error);
         controller.error(error);
       };
@@ -130,7 +137,7 @@ export function createUiChunkStreamFromAgUi(
         try {
           raw = JSON.parse(jsonStr);
         } catch (error) {
-          failStream(new Error('AG-UI protocol error: invalid JSON event line'));
+          failStream(createInvalidJsonLineError(line));
           return;
         }
 
@@ -173,4 +180,14 @@ export function createUiChunkStreamFromAgUi(
       }).finally(() => cleanup(currentReader));
     },
   });
+}
+
+function createInvalidJsonLineError(line: string): Error {
+  return new Error(`AG-UI protocol error: invalid JSON event line: ${truncateLine(line)}`);
+}
+
+function truncateLine(line: string): string {
+  const maxLength = 1000;
+  if (line.length <= maxLength) return line;
+  return `${line.slice(0, maxLength)}...`;
 }

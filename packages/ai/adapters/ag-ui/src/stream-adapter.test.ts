@@ -28,23 +28,28 @@ describe('createUiChunkStreamFromAgUi', () => {
   it('does not log repeatedly when malformed JSON is received', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     const cancel = vi.fn();
+    const onStreamError = vi.fn();
+    const invalidLine = 'data:{"type": "TEXT_MESSAGE_CONTENT", "message_id": "a"';
     const source = new ReadableStream<string>({
       start(controller) {
         controller.enqueue('data:{"type": "TEXT_MESSAGE_START", "message_id": "a"}\n');
-        controller.enqueue('data:{"type": "TEXT_MESSAGE_CONTENT", "message_id": "a"\n');
+        controller.enqueue(`${invalidLine}\n`);
       },
       cancel,
     });
 
-    const stream = createUiChunkStreamFromAgUi(source);
+    const stream = createUiChunkStreamFromAgUi(source, undefined, onStreamError);
     const reader = stream.getReader();
 
     await expect(reader.read()).resolves.toMatchObject({
       value: { type: 'text-start', id: 'a' },
       done: false,
     });
-    await expect(reader.read()).rejects.toThrow('AG-UI protocol error: invalid JSON event line');
+    await expect(reader.read()).rejects.toThrow(invalidLine);
     expect(cancel).toHaveBeenCalledTimes(1);
+    expect(onStreamError).toHaveBeenCalledTimes(1);
+    expect(onStreamError.mock.calls[0][0]).toBeInstanceOf(Error);
+    expect((onStreamError.mock.calls[0][0] as Error).message).toContain(invalidLine);
     expect(consoleError).not.toHaveBeenCalled();
 
     consoleError.mockRestore();
