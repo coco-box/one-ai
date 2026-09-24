@@ -4,8 +4,10 @@
 
 ## 特性
 
-- 支持多协议输入：SSE、WebSocket 。
-- 可选 `onUpdate` 回调：接收每个 `UIMessageChunk`，可用于数据流监听和改造。
+- 支持多协议输入：标准 SSE、JSONL、WebSocket 对象事件。
+- SSE 支持 `id`、`event`、`retry`、注释、多行 `data`、CR/LF/CRLF、任意网络分片与 UTF-8 跨分片解码。
+- 可选 `transformChunk`：在消息状态机消费前替换 chunk，或返回 `null` 丢弃业务上不需要的 chunk。
+- 可选 `onUpdate`：监听经过 `transformChunk` 后保留下来的每个 `UIMessageChunk`。
 
 ## 安装
 
@@ -51,8 +53,12 @@ import { AgUiHttpTransport } from '@coco-box/ai-ag-ui-adapter';
 const chatHttp = new Chat({
   transport: new AgUiHttpTransport({
     api: '/api/chat',
+    transformChunk: (chunk) => {
+      // 业务层可在这里过滤服务端回显等事件；默认不做任何过滤
+      return chunk;
+    },
     onUpdate: (chunk) => {
-      // UI 增量渲染或日志
+      // 监听保留下来的 UI 增量
     },
   }),
 });
@@ -78,23 +84,25 @@ const chatWs = new Chat({
   - 返回：`UIMessageChunk | TextStreamPart<any> | null`。
   - 说明：处理文本、思考、工具调用与自定义 `CUSTOM` 事件（转为 `data-*`）。
 
-- `createUiChunkStreamFromAgUi(stream, onUpdate?)`
+- `createUiChunkStreamFromAgUi(stream, options?)`
   - 作用：将 AG-UI 原始事件流（字符串、`Uint8Array` 或对象）转换为 `ReadableStream<UIMessageChunk>`。
-  - 入参：`ReadableStream<string | Uint8Array | AgUIRawEvent>`；可选 `onUpdate(chunk)`。
+  - 入参：`ReadableStream<string | Uint8Array | AgUIRawEvent>`；可选 `transformChunk`、`onUpdate`、`onStreamError`。
   - 返回：`ReadableStream<UIMessageChunk>`。
-  - 说明：自动识别 SSE 与 JSONL 格式，逐个事件映射并输出 UI 协议分片。
+  - 说明：自动识别 SSE 与 JSONL 格式，逐个事件映射并输出 UI 协议分片；旧的 `(stream, onUpdate?, onStreamError?)` 调用方式继续兼容。
 
 ### 类
 
 - `AgUiHttpTransport`
   - 继承：`HttpChatTransport<UIMessage>`（来自 `@coco-box/ai`）。
-  - 初始化：`AgUiHttpTransportInitOptions = HttpChatTransportInitOptions<UIMessage> & { onUpdate?: (chunk: UIMessageChunk) => void }`。
-  - 特性：覆写 `processResponseStream`，将后端返回的原始流适配为 `UIMessageChunk` 流；`onUpdate` 在收到新分片时触发。
+  - 初始化：在原 transport 参数上增加 `transformChunk`、`onUpdate` 和 `onResponse`。
+  - 特性：覆写 `processResponseStream`，将后端返回的原始流适配为 `UIMessageChunk` 流。
 
 - `AgUiWsTransport`
   - 继承：`WSChatTransport<UIMessage>`（来自 `@coco-box/ai`）。
-  - 初始化：`AgUiWsTransportInitOptions = WSChatTransportInitOptions<UIMessage> & { onUpdate?: (chunk: UIMessageChunk) => void }`。
-  - 特性：同上，适配 WS 原始消息到 `UIMessageChunk` 流；`onUpdate` 在收到新分片时触发。
+  - 初始化：在原 transport 参数上增加 `transformChunk` 和 `onUpdate`。
+  - 特性：同上，适配 WS 原始消息到 `UIMessageChunk` 流。
+
+`transformChunk` 的执行顺序为：AG-UI 事件映射 → `transformChunk` → `onUpdate` → 消息状态机。返回 `null` 的 chunk 不会触发 `onUpdate`，也不会进入消息状态机。业务事件是否应过滤由使用方决定；适配器不会硬编码丢弃 `USER_QUERY` 等合法 AG-UI 自定义事件。
 
 ## 事件映射一览
 
@@ -112,7 +120,7 @@ AG-UI 事件流应满足协议定义的事件顺序；公司内部可以基于 A
 
 当后端推送的数据导致 JSON 解析、事件映射、`onUpdate` 回调或 `ReadableStream` 写入失败时，适配器将按流错误处理：
 
-- SSE 注释/心跳行（例如 `: heartbeat`）以及 `event:`、`id:`、`retry:` 等非 `data` 控制字段不视为业务事件，解析器会静默跳过。
+- SSE 注释/心跳行（例如 `: heartbeat`）以及 `event:`、`id:`、`retry:` 等控制字段按 SSE 语义解析，不会被当成 JSON 业务事件。
 - 立即让当前 `ReadableStream<UIMessageChunk>` 进入 `error` 状态，使上层 `Chat` 的 `onError` 能收到明确错误。
 - 取消上游 reader；HTTP/SSE 传输还会 abort 底层 fetch 请求，避免后端持续推送时浏览器仍继续接收数据。
 - 不对同一条异常流进行高频逐行 `console.error`，避免大量日志和堆栈输出阻塞浏览器主线程。

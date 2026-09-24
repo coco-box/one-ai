@@ -1,17 +1,23 @@
 import { HttpChatTransport, type HttpChatTransportInitOptions } from "@coco-box/ai";
-import type { UIMessage, UIMessageChunk } from "@coco-box/ai";
+import type { UIMessageChunk } from "@coco-box/ai";
 import { createUiChunkStreamFromAgUi } from "./stream-adapter";
+import type { AgUiChunkTransformer } from "./stream-adapter";
 
 /**
  * AgUiHttpTransport 的初始化选项，扩展了 HttpChatTransportInitOptions
  */
 export type AgUiHttpTransportInitOptions = 
-  HttpChatTransportInitOptions<UIMessage> & {
+  HttpChatTransportInitOptions<any> & {
     /**
      * 当接收到新的 chunk 时的回调函数
      * @param chunk 接收到的 UIMessageChunk
      */
     onUpdate?: (chunk: UIMessageChunk) => void;
+
+    /**
+     * 在 chunk 进入消息状态机前进行替换；返回 null 可丢弃该 chunk
+     */
+    transformChunk?: AgUiChunkTransformer;
 
     /**
      * 在 SSE 流处理之前，对原始 Response 进行校验的回调。
@@ -35,13 +41,14 @@ export type AgUiHttpTransportInitOptions =
   };
 
 export class AgUiHttpTransport
-  extends HttpChatTransport<UIMessage>
+  extends HttpChatTransport<any>
 {
   private onUpdate?: (chunk: UIMessageChunk) => void;
+  private transformChunk?: AgUiChunkTransformer;
   private abortActiveFetch?: (reason?: unknown) => void;
 
   constructor(options: AgUiHttpTransportInitOptions = {}) {
-    const { onResponse, ...rest } = options;
+    const { onResponse, onUpdate, transformChunk, ...rest } = options;
     const originalFetch = rest.fetch ?? globalThis.fetch;
     let activeAbortController: AbortController | undefined;
 
@@ -76,7 +83,8 @@ export class AgUiHttpTransport
     };
 
     super(rest);
-    this.onUpdate = options.onUpdate;
+    this.onUpdate = onUpdate;
+    this.transformChunk = transformChunk;
     this.abortActiveFetch = abortActiveFetch;
   }
 
@@ -86,8 +94,12 @@ export class AgUiHttpTransport
   ): ReadableStream<UIMessageChunk> {
     // 这里的适配器同时支持 data: {json}\n（SSE）或 JSONL 行，或直接对象事件
     // 将 onUpdate 回调传递给 createUiChunkStreamFromAgUi 处理
-    return createUiChunkStreamFromAgUi(stream as any, this.onUpdate, (error) => {
-      this.abortActiveFetch?.(error);
+    return createUiChunkStreamFromAgUi(stream as any, {
+      transformChunk: this.transformChunk,
+      onUpdate: this.onUpdate,
+      onStreamError: (error) => {
+        this.abortActiveFetch?.(error);
+      },
     });
   }
 }

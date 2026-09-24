@@ -1,47 +1,82 @@
+import { createParser } from 'eventsource-parser';
+import type { UIMessageChunk } from '@coco-box/ai';
 import { mapAgUiEventToUiChunk } from './mapper';
 import type { AgUIRawEvent } from './types';
-import type { UIMessageChunk } from '@coco-box/ai';
+
+export type AgUiChunkTransformer = (
+  chunk: UIMessageChunk,
+) => UIMessageChunk | null;
+
+export interface AgUiStreamAdapterOptions {
+  /** 在 chunk 进入 @coco-box/ai 状态机前进行替换；返回 null 可丢弃该 chunk。 */
+  transformChunk?: AgUiChunkTransformer;
+  /** 收到保留下来的 chunk 时触发。 */
+  onUpdate?: (chunk: UIMessageChunk) => void;
+  /** 流解析、映射或回调失败时触发。 */
+  onStreamError?: (error: unknown) => void;
+}
+
+type StreamValue = string | Uint8Array | AgUIRawEvent;
+type TextStreamMode = 'sse' | 'jsonl';
 
 /**
- * 将 AG-UI 原始事件（对象或 JSON 行）流，适配为 AI SDK 的 UIMessageChunk ReadableStream。
- * 可用于自定义 Transport（SSE/WS）。
- * 
- * @param agUIStream AG-UI 原始事件流
- * @param onUpdate 可选的 chunk 更新回调函数
- * @param onStreamError 可选的流错误回调函数
+ * 将 AG-UI 原始事件（SSE、JSONL 或对象）流适配为 UIMessageChunk 流。
+ *
+ * 旧的三个位置参数签名继续保留；新代码建议传入 options 对象。
  */
 export function createUiChunkStreamFromAgUi(
-  agUIStream: ReadableStream<string | Uint8Array | AgUIRawEvent>,
+  agUIStream: ReadableStream<StreamValue>,
+  options?: AgUiStreamAdapterOptions,
+): ReadableStream<UIMessageChunk>;
+export function createUiChunkStreamFromAgUi(
+  agUIStream: ReadableStream<StreamValue>,
   onUpdate?: (chunk: UIMessageChunk) => void,
   onStreamError?: (error: unknown) => void,
+): ReadableStream<UIMessageChunk>;
+export function createUiChunkStreamFromAgUi(
+  agUIStream: ReadableStream<StreamValue>,
+  optionsOrOnUpdate?: AgUiStreamAdapterOptions | ((chunk: UIMessageChunk) => void),
+  legacyOnStreamError?: (error: unknown) => void,
 ): ReadableStream<UIMessageChunk> {
+  const options: AgUiStreamAdapterOptions =
+    typeof optionsOrOnUpdate === 'function' || optionsOrOnUpdate === undefined
+      ? {
+          onUpdate: optionsOrOnUpdate,
+          onStreamError: legacyOnStreamError,
+        }
+      : optionsOrOnUpdate;
   const textDecoder = new TextDecoder();
-  let reader: ReadableStreamDefaultReader<string | Uint8Array | AgUIRawEvent> | undefined;
+  let reader: ReadableStreamDefaultReader<StreamValue> | undefined;
   let isClosed = false;
 
   const cleanup = (
-    currentReader: ReadableStreamDefaultReader<string | Uint8Array | AgUIRawEvent> | undefined = reader,
+    currentReader: ReadableStreamDefaultReader<StreamValue> | undefined = reader,
   ) => {
     try {
       currentReader?.releaseLock();
-    } catch (e) {
-      // reader 可能已经释放,忽略错误
+    } catch {
+      // reader 可能已经释放。
     }
   };
 
   return new ReadableStream<UIMessageChunk>({
     start(controller) {
       reader = agUIStream.getReader();
-      let buffer = '';
+      let textMode: TextStreamMode | undefined;
+      let undecidedText = '';
+      let jsonLineBuffer = '';
 
       const cancelUpstream = (reason?: unknown) => {
         const currentReader = reader;
         if (!currentReader) return;
 
         reader = undefined;
-        currentReader.cancel(reason).catch(() => {
-          // 上游可能已经结束或不可取消,忽略错误
-        }).finally(() => cleanup(currentReader));
+        currentReader
+          .cancel(reason)
+          .catch(() => {
+            // 上游可能已经结束或不可取消。
+          })
+          .finally(() => cleanup(currentReader));
       };
 
       const closeStream = () => {
@@ -55,131 +90,221 @@ export function createUiChunkStreamFromAgUi(
         if (isClosed) return;
         isClosed = true;
         try {
-          onStreamError?.(error);
-        } catch (e) {
-          // 错误回调不应阻断原始错误继续传递给下游
+          options.onStreamError?.(error);
+        } catch {
+          // 错误回调不应覆盖原始流错误。
         }
         cancelUpstream(error);
         controller.error(error);
       };
 
-      async function pump(): Promise<void> {
-        try {
-          if (isClosed || !reader) return;
-
-          const { done, value } = await reader.read();
-
-          if (isClosed) return;
-
-          if (done) {
-            // flush buffer - 逐行处理确保所有数据都被正确解析
-            if (buffer.trim()) {
-              const remainingLines = buffer.split('\n');
-              for (const line of remainingLines) {
-                const trimmedLine = line.trim();
-                if (trimmedLine && !isClosed) {
-                  tryParseAndEmit(trimmedLine);
-                }
-              }
-            }
-            cleanup(); // 清理 reader
-
-            // 防止重复 close
-            closeStream();
-            return;
-          }
-
-          if (typeof value === 'string') {
-            buffer += value;
-          } else if (value instanceof Uint8Array) {
-            buffer += textDecoder.decode(value, { stream: true });
-          } else {
-            // 直接对象事件
-            emitEventObject(value as AgUIRawEvent);
-          }
-
-          // 尝试逐行解析（支持 SSE: `data: {...}\n` 或纯 JSONL）
-          let lineBreakIndex: number;
-          while (!isClosed && (lineBreakIndex = buffer.indexOf('\n')) >= 0) {
-            const line = buffer.slice(0, lineBreakIndex).trim();
-            buffer = buffer.slice(lineBreakIndex + 1);
-            if (!line) continue;
-
-            tryParseAndEmit(line);
-          }
-
-          if (!isClosed) {
-            return pump();
-          }
-        } catch (err) {
-          cleanup(); // 错误时也清理 reader
-
-          // 只在流未关闭时报告错误
-          failStream(err);
-        }
-      }
-
-      // 将这些函数移到 start 内部，共享 isClosed 状态
-      function tryParseAndEmit(line: string) {
+      const emitEventObject = (raw: AgUIRawEvent) => {
         if (isClosed) return;
 
-        // SSE data: 前缀
-        const jsonStr = line.startsWith('data:')
-          ? line.substring(5)
-          : line;
+        try {
+          const mappedChunk = mapAgUiEventToUiChunk(raw);
+          if (!mappedChunk) return;
 
-        if (jsonStr === '[DONE]') {
+          const chunk = options.transformChunk
+            ? options.transformChunk(mappedChunk as UIMessageChunk)
+            : (mappedChunk as UIMessageChunk);
+          if (!chunk || isClosed) return;
+
+          options.onUpdate?.(chunk);
+          controller.enqueue(chunk);
+
+          if (chunk.type === 'finish') {
+            closeStream();
+          }
+        } catch (error) {
+          failStream(error);
+        }
+      };
+
+      const parseAndEmit = (payload: string, source: string) => {
+        if (isClosed) return;
+
+        const normalizedPayload = payload.trim();
+        if (!normalizedPayload) return;
+        if (normalizedPayload === '[DONE]') {
           closeStream();
           return;
         }
 
-        let raw: AgUIRawEvent;
         try {
-          raw = JSON.parse(jsonStr);
-        } catch (error) {
-          failStream(createInvalidJsonLineError(line));
+          emitEventObject(JSON.parse(normalizedPayload) as AgUIRawEvent);
+        } catch {
+          if (!isClosed) {
+            failStream(createInvalidJsonLineError(source));
+          }
+        }
+      };
+
+      const sseParser = createParser({
+        onEvent(event) {
+          parseAndEmit(event.data, `data: ${event.data}`);
+        },
+      });
+
+      const parseJsonLine = (line: string) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return;
+        parseAndEmit(trimmedLine, trimmedLine);
+      };
+
+      const feedJsonLines = (text: string, final = false) => {
+        jsonLineBuffer += text;
+
+        while (!isClosed) {
+          const lineBreakIndex = jsonLineBuffer.search(/[\r\n]/);
+          if (lineBreakIndex < 0) break;
+          if (
+            !final &&
+            jsonLineBuffer[lineBreakIndex] === '\r' &&
+            lineBreakIndex === jsonLineBuffer.length - 1
+          ) {
+            break;
+          }
+
+          const width =
+            jsonLineBuffer[lineBreakIndex] === '\r' &&
+            jsonLineBuffer[lineBreakIndex + 1] === '\n'
+              ? 2
+              : 1;
+          parseJsonLine(jsonLineBuffer.slice(0, lineBreakIndex));
+          jsonLineBuffer = jsonLineBuffer.slice(lineBreakIndex + width);
+        }
+
+        if (final && !isClosed && jsonLineBuffer) {
+          parseJsonLine(jsonLineBuffer);
+          jsonLineBuffer = '';
+        }
+      };
+
+      const feedDetectedText = (text: string) => {
+        if (textMode === 'sse') {
+          sseParser.feed(text);
+        } else {
+          feedJsonLines(text);
+        }
+      };
+
+      const feedText = (text: string) => {
+        if (!text || isClosed) return;
+        if (textMode) {
+          feedDetectedText(text);
           return;
         }
 
-        emitEventObject(raw);
-      }
+        undecidedText += text;
+        const detectedMode = detectTextStreamMode(undecidedText);
+        if (!detectedMode) return;
 
-      function emitEventObject(raw: AgUIRawEvent) {
+        textMode = detectedMode;
+        const pendingText = undecidedText;
+        undecidedText = '';
+        feedDetectedText(pendingText);
+      };
+
+      const flushBufferedText = () => {
+        if (!textMode && undecidedText.trim()) {
+          textMode = detectTextStreamMode(undecidedText, true) ?? 'jsonl';
+          const pendingText = undecidedText;
+          undecidedText = '';
+          feedDetectedText(pendingText);
+        }
+
+        if (textMode === 'sse') {
+          // 标准 SSE 在空行处派发事件；结束时补空行兼容缺少结尾分隔符的旧服务。
+          sseParser.feed('\n\n');
+        } else if (textMode === 'jsonl') {
+          feedJsonLines('', true);
+        }
+      };
+
+      const flushText = () => {
+        const decoderTail = textDecoder.decode();
+        if (decoderTail) feedText(decoderTail);
+        if (isClosed) return;
+        flushBufferedText();
+      };
+
+      const finishNaturally = () => {
+        if (isClosed) return;
+        const currentReader = reader;
+        reader = undefined;
+        cleanup(currentReader);
+        isClosed = true;
+        controller.close();
+      };
+
+      const pump = async () => {
         try {
-          const chunk = mapAgUiEventToUiChunk(raw);
-          if (chunk) {
-            // 流已关闭时不再 enqueue，防止级联错误
+          while (!isClosed && reader) {
+            const { done, value } = await reader.read();
             if (isClosed) return;
 
-            // 调用 onUpdate 回调（如果提供）
-            onUpdate?.(chunk as UIMessageChunk);
-
-            // 继续传递 chunk
-            controller.enqueue(chunk as UIMessageChunk);
-
-            // 结束
-            if (chunk.type === 'finish') {
-              closeStream();
+            if (done) {
+              flushText();
+              finishNaturally();
               return;
+            }
+
+            if (typeof value === 'string') {
+              feedText(value);
+            } else if (value instanceof Uint8Array) {
+              feedText(textDecoder.decode(value, { stream: true }));
+            } else {
+              // 混合输入时先结算前面的文本，保持文本事件与对象事件的原始顺序。
+              flushBufferedText();
+              emitEventObject(value);
             }
           }
         } catch (error) {
           failStream(error);
         }
-      }
+      };
 
-      pump();
+      void pump();
     },
     cancel(reason) {
       if (isClosed) return;
       isClosed = true;
       const currentReader = reader;
       reader = undefined;
-      currentReader?.cancel(reason).catch(() => {
-        // 上游可能已经结束或不可取消,忽略错误
-      }).finally(() => cleanup(currentReader));
+      currentReader
+        ?.cancel(reason)
+        .catch(() => {
+          // 上游可能已经结束或不可取消。
+        })
+        .finally(() => cleanup(currentReader));
     },
   });
+}
+
+function detectTextStreamMode(text: string, final = false): TextStreamMode | undefined {
+  const sample = text.replace(/^\uFEFF/, '').trimStart();
+  if (!sample) return undefined;
+
+  if (sample.startsWith('{') || sample.startsWith('[')) {
+    return 'jsonl';
+  }
+
+  const lineBreakIndex = sample.search(/[\r\n]/);
+  const firstLine = lineBreakIndex < 0 ? sample : sample.slice(0, lineBreakIndex);
+  if (
+    firstLine.startsWith(':') ||
+    /^(?:data|event|id|retry)(?::|$)/.test(firstLine) ||
+    firstLine.includes(':')
+  ) {
+    return 'sse';
+  }
+
+  if (lineBreakIndex >= 0 || final) {
+    return 'jsonl';
+  }
+
+  return undefined;
 }
 
 function createInvalidJsonLineError(line: string): Error {

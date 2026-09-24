@@ -1,6 +1,6 @@
 {
   "name": "@coco-box/ai-ag-ui-adapter",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Ag-UI 适配器：将 Ag-UI 事件与 @coco-box/ai UI 消息流对接",
   "type": "module",
   "main": "dist/index.js",
@@ -24,9 +24,10 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@coco-box/ai": "workspace:*",
     "@ag-ui/client": "^0.0.35",
-    "@ag-ui/core": "^0.0.35"
+    "@ag-ui/core": "^0.0.35",
+    "@coco-box/ai": "workspace:*",
+    "eventsource-parser": "^3.1.0"
   },
   "peerDependencies": {
     "@coco-box/ai": "workspace:*"
